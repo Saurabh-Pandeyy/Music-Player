@@ -30,6 +30,7 @@ dependencies:
   flutter_web_auth:
   http:
   google_fonts:
+  shared_preferences:
   cupertino_icons: ^1.0.2
 
 dev_dependencies:
