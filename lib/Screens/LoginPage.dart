@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:music_player/Screens/HomePage.dart';
 import 'package:music_player/Services/AuthServices.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatelessWidget {
 
@@ -47,9 +48,13 @@ class LoginPage extends StatelessWidget {
 
                   if(authCode != null){
 
-                   Navigator.pushReplacement(context, MaterialPageRoute(
-                     builder:(context) => HomePage()
-                   ));
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    prefs.setBool('isLoggedIn', true);
+                  
+
+                    Navigator.pushReplacement(context, MaterialPageRoute(
+                      builder:(context) => HomePage()
+                    ));
                   
                   }
                 }, 

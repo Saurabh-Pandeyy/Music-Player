@@ -1,7 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:music_player/Services/AuthServices.dart';
 import 'package:music_player/Services/DataServices.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
 
@@ -10,31 +9,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  
-
-  @override
-  void initState() {
-    super.initState();
-    getAT();
-  }
-
-  Future getAT()async{
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    var atData = await AuthServices().getAccessTokenDetails(prefs.getString('authCode'));
-    storeAccessTokenInSP(atData);
-
-  }
-
-  Future storeAccessTokenInSP(var data)async{
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    prefs.setString('access_token', data['access_token']);
-    prefs.setString('refresh_token', data['refresh_token']);
-
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +29,50 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            FutureBuilder(
-              future: DataServices().getData(),
-              builder: (context,snap){
-                return Container();
-              })
+            Expanded(
+              child: FutureBuilder(
+                future: DataServices().getData(), 
+                builder: (context,snap){
+
+                  if(snap.connectionState == ConnectionState.waiting){
+                    return Center(child: CircularProgressIndicator(),);
+                  }
+                  if(snap.data != null){
+
+                    var data = jsonDecode(snap.data.body);
+                   
+                    return  ListView.builder(
+                      itemCount: data['items'].length,
+                      itemBuilder: (context,index){
+                        return InkWell(
+                                                  child: Container(
+                            height: 150,width: 150,
+                            child: Image.network(data['items'][index]['images'][0]['url']),
+                          ),
+                          onTap: () => Navigator.push(context, MaterialPageRoute( 
+                      builder:(context) => Home()
+                    ))
+                        );
+                      }); 
+                  }
+                  else return Container();
+                }),
+            )
           ],
         ),
       ),
     );
+  }
+}
+
+class Home extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Container(height: 100,width: 100,color: Colors.red),
+      ),
+    );
+
   }
 }
