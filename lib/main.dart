@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:music_player/Screens/HomePage.dart';
 import 'package:music_player/Screens/LoginPage.dart';
+import 'package:music_player/Widgets/CurrentTrack.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -11,9 +13,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: App(),
+    return ChangeNotifierProvider<CurrentTrack>(
+            
+      create:(_) => CurrentTrack(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: App(),
+      ),
     );
   }
 }
@@ -55,7 +61,9 @@ class _AppState extends State<App> {
           return Center(child: Container(child: CircularProgressIndicator(),),);
         }
         if(snap.data != null ){
-          return snap.data == true ? HomePage() : LoginPage();
+          return snap.data == true 
+          ? HomePage()
+          : LoginPage();
         }
         else return Container();
       });

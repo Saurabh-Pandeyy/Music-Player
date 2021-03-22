@@ -27,14 +27,14 @@ class LoginPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(10),
               child: Text('Music Player', 
-              style: GoogleFonts.libreBaskerville(fontSize: 20),),
+              style: GoogleFonts.croissantOne(fontSize: 27),), 
             ),
 
             Padding(
               padding: const EdgeInsets.all(50),
               child: ElevatedButton(
                 
-                child: Text('Sign In with Spotify',style: TextStyle(fontSize: 16),),
+                child: Text('Sign In with Spotify',style: GoogleFonts.roboto(textStyle: TextStyle(fontSize: 16,))), 
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.all(Color(0xff3024e0)),
                   elevation: MaterialStateProperty.all(7),
@@ -66,5 +66,3 @@ class LoginPage extends StatelessWidget {
     );
   }
 }
-
-//#3024e0
