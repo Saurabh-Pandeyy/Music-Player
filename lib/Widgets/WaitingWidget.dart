@@ -3,8 +3,8 @@ import 'package:shimmer/shimmer.dart';
 
   Widget homePageWaitingWidget(){
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300],   
-      highlightColor: Colors.grey[100], 
+      baseColor: Color(0xffe0e0e0),   
+      highlightColor: Color(0xfff5f5f5), 
       child: Row(
         children: [
           Padding(
@@ -44,78 +44,61 @@ import 'package:shimmer/shimmer.dart';
     ); 
   }
 
-  Widget detailsPageWaitingWidget(BuildContext context){
+  Widget detailsPageWaitingWidget(){
     return Container(
       color: Colors.white,
       child: Shimmer.fromColors(
-        baseColor: Colors.grey[300],   
-        highlightColor: Colors.grey[100], 
-        child: Column(
-          children: [
-            Padding( 
-              padding: const EdgeInsets.all(8.0),
-              child: ClipRRect( 
-                borderRadius:  BorderRadius.circular(13),
-                child: Container(
-                  width: MediaQuery.of(context).size.width,height: MediaQuery.of(context).size.height/3,
-                   color: Colors.white,
+        baseColor: Color(0xffe0e0e0),   
+        highlightColor: Color(0xfff5f5f5), 
+        child: ListView.builder(
+          itemCount: 6,
+          itemBuilder: (context,index){
+            return Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ClipRRect(  
+                  borderRadius: BorderRadius.circular(5),
+                  child: Container(
+                    color: Colors.white,
+                    height: 80,width: 80,
+                  ),
                 ),
               ),
-            ), 
 
-            Expanded(
-              child: ListView.builder(
-                itemCount: 6,
-                itemBuilder: (context,index){
-                  return Row(
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: ClipRRect(  
-                        borderRadius: BorderRadius.circular(5),
-                        child: Container(
-                          color: Colors.white,
-                          height: 80,width: 80,
+                      child: Container(
+                        width: 500,
+                        height: 20,
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                          borderRadius: BorderRadius.horizontal(left: Radius.circular(10),right: Radius.circular(10))
                         ),
                       ),
                     ),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              width: 500,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                borderRadius: BorderRadius.horizontal(left: Radius.circular(10),right: Radius.circular(10))
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              width: 200,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.horizontal(left: Radius.circular(10),right: Radius.circular(10))
-                              ),
-                            ),
-                          ) 
-                        ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        width: 200,
+                        height: 20,
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.horizontal(left: Radius.circular(10),right: Radius.circular(10))
+                        ),
                       ),
-                    ) ,
+                    ) 
                   ],
-                );
-                },
-                
-              ),
-            ),
-          ],
+                ),
+              ) ,
+            ],
+          );
+          },
+          
         ),
       ),
     ); 

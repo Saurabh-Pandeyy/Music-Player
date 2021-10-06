@@ -1,22 +1,15 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:music_player/Widgets/CurrentTrack.dart';
-import 'package:provider/provider.dart';
-
-
+import 'package:music_player/ViewModels/PlayTrackViewModel.dart';
 
 class PlayTrack extends StatefulWidget {
 
-  final trackImageList;
-  final trackNameList;
-  final trackArtistList;
-  final trackDurationList;
-  final trackURLList;
+  final List trackDataList;
   final trackIndex;
 
-  PlayTrack({Key key,@required this.trackImageList,@required this.trackNameList,
-  @required this.trackArtistList,@required this.trackDurationList,@required this.trackURLList, @required this.trackIndex}): super(key: key);
+  PlayTrack({Key? key,required this.trackDataList, required this.trackIndex}): super(key: key);
   
   @override 
   _PlayTrackState createState() => _PlayTrackState();
@@ -24,65 +17,73 @@ class PlayTrack extends StatefulWidget {
 
 class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
   
-  PageController controller;
+  late PageController pageController;
+  late AnimationController animationController;
+  late int currentTrackIndex;
+  late bool isOtherTrackPlaying;
 
   AudioPlayer player = AudioPlayer();
+
   Duration trackDuration = Duration(seconds: 30);  //because we know its a preview url
-  Duration currentPosition = Duration();
-  int currentTrackIndex;
-  AnimationController animationController;
-  bool isOtherTrackPlaying;
+  Duration currentPosition = Duration.zero;
+  
   bool isCurrentTrackPlaying = true;
+
+  List trackUrlList = [];
+  late PlayTrackViewModel trackController;
  
   
   @override
   void initState() {
 
-    super.initState();
-    controller = PageController(initialPage: widget.trackIndex);
+    trackController = Get.put(PlayTrackViewModel(),permanent: true);
+
+    pageController = PageController(initialPage: widget.trackIndex);
     
     animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 300), 
       reverseDuration: Duration(milliseconds: 300),
     );
+
     currentTrackIndex = widget.trackIndex;
+    trackUrlList = widget.trackDataList.map((e) => e.trackUrl!).toList(); // extracting url from trackDataList
+
+    super.initState();
+    
   } 
   
   Future playAudio() async{
     
-    //to check if other track is already playing
-    isOtherTrackPlaying = Provider.of<CurrentTrack>(context,listen: false).getIsSongPlaying();
+    isOtherTrackPlaying = trackController.getIsSongPlaying();
+    print(isOtherTrackPlaying);
     
-    if(isOtherTrackPlaying){
-      Provider.of<CurrentTrack>(context,listen: false).stopPlaying();
+    if(isOtherTrackPlaying){ 
+      trackController.stopPlaying();
     }
-    
-    if(widget.trackURLList[currentTrackIndex] == null) {
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Container(child: Text('Can\'t play due to invalid url'),),),
-      );
-      controller.nextPage(duration: Duration(seconds: 2), curve: Curves.easeIn);
-    }else{
+    player.play(trackUrlList[currentTrackIndex]);
 
-      player.play(widget.trackURLList[currentTrackIndex]).then((value) => 
-        Provider.of<CurrentTrack>(context,listen: false).setCurrentTrack(player,widget.trackImageList[currentTrackIndex],widget.trackNameList[currentTrackIndex],widget.trackArtistList[currentTrackIndex]));
-      player.onPlayerError.listen((event) {
-        print('error: $event');
-      });
-    }
+    trackController.setPlayerStateStream(player);
+    trackController.setCurrentTrack(
+      player,
+      widget.trackDataList[currentTrackIndex].trackImage!,
+      widget.trackDataList[currentTrackIndex].trackName!,
+      widget.trackDataList[currentTrackIndex].trackSubtitle!
+    );
+
+    player.onPlayerError.listen((event) {
+      print('error: $event');
+    });
   } 
 
-  void playPauseButton(){
-    
-  }
   
   @override
   Widget build(BuildContext context) {
- 
-    playAudio(); 
-  
+    print('build');
+
+    playAudio();
+
     return SafeArea(
       child: Scaffold(
         body: Stack(
@@ -91,11 +92,13 @@ class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
             PageView.builder(
               
               scrollDirection: Axis.vertical,
-              controller: controller,
+              controller: pageController,
               
-              itemCount: widget.trackNameList.length ,
+              itemCount: widget.trackDataList.length,
               itemBuilder: (context,index){
+
                 currentTrackIndex = index;
+
                 try{
                   return Column( 
                     mainAxisAlignment: MainAxisAlignment.center, 
@@ -104,29 +107,40 @@ class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
                       Padding( 
                         padding: EdgeInsets.all(8),
                         child: ClipRRect( 
+
                           borderRadius: BorderRadius.all(Radius.circular(5)),
-                          child: Image.network(widget.trackImageList[index],fit: BoxFit.contain,height: MediaQuery.of(context).size.height/2.9,),
+
+                          child: Image.network(
+                            widget.trackDataList[index].trackImage!,
+                            fit: BoxFit.contain,
+                            height: Get.size.height/2.9,
+                          ),
                         ),
                       ),
 
                       Padding(
                         padding: const EdgeInsets.all(10),
-                        child: Text(widget.trackNameList[index],
-                          style: GoogleFonts.raleway(fontSize: 22,fontWeight: FontWeight.bold)
+                        child: Text(
+                          widget.trackDataList[index].trackName!,
+                          style: GoogleFonts.raleway(
+                            fontSize: 22, fontWeight: FontWeight.bold
+                          )
                         ),
                       ),
+
                       Padding(
                         padding: const EdgeInsets.fromLTRB(10, 10, 10, 25),
-                        child: Text(widget.trackArtistList[index],style: GoogleFonts.raleway(fontSize: 18) ),
+                        child: Text(
+                          widget.trackDataList[index].trackSubtitle!,
+                          style: GoogleFonts.raleway(fontSize: 18) 
+                        ),
                       ),
 
-                      //implement SB of durationstream to get total duration of track
-                      StreamBuilder<Duration>(
-                        stream: player.onAudioPositionChanged ,
-                        builder: (context, snap) {
+                      Obx(       //streaming current position of player
+                        (){
 
-                          currentPosition = snap.data ?? Duration.zero;
-                      
+                          currentPosition = trackController.durationStream.value;
+
                           return Column(
                             children: [
                               Padding(
@@ -156,7 +170,7 @@ class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
                           );
                         }
                       ),
-                     
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -167,15 +181,14 @@ class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
                               onPressed:() => player.seek(currentPosition - Duration(seconds: 10) )
                             )
                           ),
-                        
-                          StreamBuilder<AudioPlayerState>(
 
-                            stream: player.onPlayerStateChanged,
-                            builder: (context, snapshot) {
-                              
-                              if(snapshot.data == AudioPlayerState.COMPLETED){
-                                Provider.of<CurrentTrack>(context,listen: false).stopPlaying();
-                                controller.nextPage(duration: Duration(seconds: 2), curve: Curves.easeIn);
+                          Obx(      //streaming audio player state 
+                            (){
+
+                              if( trackController.playerStateStream.value == AudioPlayerState.COMPLETED ){
+
+                                trackController.stopPlaying();
+                                pageController.nextPage(duration: Duration(seconds: 2), curve: Curves.easeIn);
                               }
 
                               return Padding(
@@ -184,6 +197,7 @@ class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
                                   children: [
                                     
                                     InkWell(
+
                                       child: CircleAvatar(
                                         child: AnimatedIcon(
                                           icon: AnimatedIcons.pause_play,
@@ -193,41 +207,40 @@ class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
                                         backgroundColor: Colors.black, 
                                         foregroundColor: Colors.white,
                                       ),
+
                                       onTap:()async {
-                                       if(snapshot.data == AudioPlayerState.PLAYING){
-                                            await player.pause();
-                                            animationController.forward();
-                                          }
-                                          if(snapshot.data == AudioPlayerState.PAUSED){
-                                            await player.resume();
-                                            animationController.reverse();
-                                          }  
-      
+
+                                        if( trackController.playerStateStream.value == AudioPlayerState.PLAYING ){
+                                          await player.pause();
+                                          animationController.forward();
+                                        }
+                                        if(trackController.playerStateStream.value == AudioPlayerState.PAUSED){
+                                          await player.resume();
+                                          animationController.reverse();
+                                        }  
                                       },
                                     ),
                                   ],
                                 ),
                               );
                             }
-                          ), 
+                          ),
+                         
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child:IconButton(
                               icon:Icon(Icons.skip_next_rounded),
                               onPressed: () => player.seek(currentPosition + Duration(seconds: 10))
                             )
-                        
                           ),
-                        ])
-                    
+                        ]
+                      )
                     ],
                   );
                 }catch(e){
                   print(e);
                   return Center(child: Text('No data'),);
-                  
                 }
-                
               },
               onPageChanged: (v) => playAudio(),
             ),
@@ -257,6 +270,3 @@ class _PlayTrackState extends State<PlayTrack> with TickerProviderStateMixin {
     );
   }
 }
-
-
-

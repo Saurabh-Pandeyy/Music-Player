@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:music_player/Screens/HomePage.dart';
+import 'package:music_player/Screens/HomePage/HomePage.dart';
 import 'package:music_player/Services/AuthServices.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatelessWidget {
 
@@ -44,17 +45,14 @@ class LoginPage extends StatelessWidget {
 
                 onPressed: () async{
 
-                  var authCode = await AuthServices().signInWithSpotify();
+                  String? authCode = await AuthServices().signInWithSpotify();
 
                   if(authCode != null){
 
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                    prefs.setBool('isLoggedIn', true);
+                    GetStorage storage = GetStorage();
+                    storage.write('isLoggedIn', true);
                   
-
-                    Navigator.pushReplacement(context, MaterialPageRoute(
-                      builder:(context) => HomePage()
-                    ));
+                    Get.to(() => HomePage());
                   
                   }
                 }, 

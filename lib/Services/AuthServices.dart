@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_player/Widgets/SnackBarWidget.dart';
 
 class AuthServices{
 
-  var authCode;
+  String? authorizationCode;
 
-  Future signInWithSpotify() async{
+  Future<String?> signInWithSpotify() async{
 
     await FlutterWebAuth.authenticate(
 
@@ -15,21 +16,26 @@ class AuthServices{
       callbackUrlScheme: "musicplayer"
 
     ).then((value){
-      authCode = Uri.parse(value).queryParameters['code'];
-      getAccessTokenDetails(authCode);
+
+      authorizationCode = Uri.parse(value).queryParameters['code'];
+      authorizationCode != null ? getAccessTokenDetails(authorizationCode!) : snackBarWidget('Some error occured! Please try again.');
+
     });
-    return authCode;
+
+    return authorizationCode;
   }
 
   Future getAccessTokenDetails(String authCode) async{
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    GetStorage storage = GetStorage();
  
     //Post request to spotify for getting accessToken by exchanging authCode
-    var result = await http.post( Uri.parse('https://accounts.spotify.com/api/token'),  
+
+    var result = await http.post( Uri.parse('https://accounts.spotify.com/api/token'), 
+
       body: {
         'grant_type' : 'authorization_code',
-        'code' : authCode,
+        'code' : authorizationCode,
         'redirect_uri' : 'musicplayer:/',
         'client_id' : '1e8e4a39b691401d83380d4d9f7a5959',
         'client_secret' : 'f73e179e707c480d8fc09530bfa17fd2'
@@ -38,12 +44,14 @@ class AuthServices{
     if(jsonDecode(result.body)['error'] == null){
 
       //storing AT and RT in local Storage
-      prefs.setString('access_token', jsonDecode(result.body)['access_token']);     
-      prefs.setString('refresh_token', jsonDecode(result.body)['refresh_token']);     
+
+      storage.write('access_token', jsonDecode(result.body)['access_token']);     
+      storage.write('refresh_token', jsonDecode(result.body)['refresh_token']);     
       
     }
 
     //if above response gives error then re-Login
+    
     if(jsonDecode(result.body)['error'] != null){
       signInWithSpotify();
     }
